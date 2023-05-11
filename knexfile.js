@@ -1,12 +1,13 @@
 /* eslint-disable comma-dangle */
 // Update with your config settings.
+import dbConfig from "./src/config/database.config.js";
 
 /**
  * @type { Object.<string, import("knex").Knex.Config> }
  */
 export const development = {
   client: 'pg',
-  connection: process.env.DATABASE_URI,
+  connection: dbConfig.DATABASE_URI,
   migrations: {
     directory: './src/database/migrations',
   },
