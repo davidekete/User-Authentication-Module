@@ -1,21 +1,27 @@
 import bcrypt from 'bcrypt';
 import db from '../database/db';
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { passwordStrength } from 'check-password-strength';
-import { error } from 'console';
+import { isEmail } from '../utils/isEmail';
+import { LoginData } from '../interfaces/loginData';
+import { User } from '../interfaces/userInterface';
 
-async function createUser(req: Request, res: Response, next: any) {
+async function createUser(req: Request, res: Response, next: NextFunction) {
   const { username, firstname, lastname, email, password } = req.body;
 
-  const userNameExists = await db('usr_info').where({ username });
-  const emailExists = await db('usr_info').where({ email });
+  try {
+    const userNameExists = await db('usr_info').where({ username });
+    const emailExists = await db('usr_info').where({ email });
 
-  if (userNameExists.length !== 0) {
-    res.status(400).json({ message: 'Username already exists' });
-  }
+    if (userNameExists.length !== 0) {
+      return res.status(400).json({ message: 'Username already exists' });
+    }
 
-  if (emailExists.length !== 0) {
-    res.status(400).json({ message: 'Email already exists' });
+    if (emailExists.length !== 0) {
+      return res.status(400).json({ message: 'Email already exists' });
+    }
+  } catch (error) {
+    console.log(error);
   }
 
   const passwordDifficulty = passwordStrength(password);
@@ -24,7 +30,7 @@ async function createUser(req: Request, res: Response, next: any) {
     passwordDifficulty.value !== 'Strong' &&
     passwordDifficulty.value !== 'Medium'
   ) {
-    res.status(400).json({ message: 'Password is not strong enough' });
+    return res.status(400).json({ message: 'Password is not strong enough' });
   }
 
   const SALT_ROUNDS = 10;
@@ -42,8 +48,8 @@ async function createUser(req: Request, res: Response, next: any) {
             password: hash,
           });
           res.status(201).json({ newUser });
-        } catch (error) {
-          res.status(500).json({ error: error.message });
+        } catch (error: any) {
+          return res.status(500).json({ error: error.message });
         }
       }
     })
@@ -51,3 +57,34 @@ async function createUser(req: Request, res: Response, next: any) {
       console.log(error);
     });
 }
+
+async function login(req: Request, res: Response, next: NextFunction) {
+  const { emailOrUsername, password } = req.body;
+
+  const userData: LoginData = { email: '', password, username: '' };
+  let user;
+
+  const isInputEmail = isEmail(emailOrUsername);
+
+  if (isInputEmail) {
+    userData.email = emailOrUsername;
+    user = await db('usr_info').where({ email: emailOrUsername });
+
+    if (user.length === 0) {
+      return res.status(401).json({ message: 'Invalid Credentials' });
+    }
+  } else {
+    userData.username = emailOrUsername;
+    user = await db('usr_info').where({ username: emailOrUsername });
+
+    if (user.length === 0) {
+      return res.status(401).json({ message: 'Invalid Credentials' });
+    }
+  }
+
+  
+}
+
+// bcrypt.compare(password, user[0].password).then((result) => {});
+// try {
+// } catch (error) {}
