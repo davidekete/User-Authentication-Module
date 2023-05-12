@@ -1,6 +1,6 @@
 /* eslint-disable comma-dangle */
 // Update with your config settings.
-import dbConfig from "./src/config/database.config.js";
+import { dbConfig } from './src/config.ts';
 
 /**
  * @type { Object.<string, import("knex").Knex.Config> }

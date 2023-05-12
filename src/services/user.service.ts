@@ -5,7 +5,7 @@ import { passwordStrength } from 'check-password-strength';
 import { isEmail } from '../utils/isEmail';
 import { LoginData } from '../interfaces/loginData';
 import { User } from '../interfaces/userInterface';
-import { error } from 'console';
+import { generateAccessToken } from '../utils/jwt';
 
 async function createUser(req: Request, res: Response, next: NextFunction) {
   const { username, firstname, lastname, email, password } = req.body;
@@ -86,6 +86,10 @@ async function login(req: Request, res: Response, next: NextFunction) {
   bcrypt
     .compare(password, user[0].password)
     .then((result) => {
+      console.log(result);
+      const token = generateAccessToken(
+        userData.email ? userData.email : userData.username
+      );
       return res.status(200).json({ message: 'User Logged in Successfully' });
     })
     .catch((error) => {
