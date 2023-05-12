@@ -5,6 +5,7 @@ import { passwordStrength } from 'check-password-strength';
 import { isEmail } from '../utils/isEmail';
 import { LoginData } from '../interfaces/loginData';
 import { User } from '../interfaces/userInterface';
+import { error } from 'console';
 
 async function createUser(req: Request, res: Response, next: NextFunction) {
   const { username, firstname, lastname, email, password } = req.body;
@@ -82,9 +83,13 @@ async function login(req: Request, res: Response, next: NextFunction) {
     }
   }
 
-  
+  bcrypt
+    .compare(password, user[0].password)
+    .then((result) => {
+      return res.status(200).json({ message: 'User Logged in Successfully' });
+    })
+    .catch((error) => {
+      console.log(error);
+      return res.status(401).json({ message: 'Invalid Credentials' });
+    });
 }
-
-// bcrypt.compare(password, user[0].password).then((result) => {});
-// try {
-// } catch (error) {}
