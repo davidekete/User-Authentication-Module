@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Reusable and Extensible User Authentication and Authorization Module",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "test": "jest",
     "start:dev": "npx nodemon",
