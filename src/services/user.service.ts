@@ -4,12 +4,24 @@ import { Request, Response, NextFunction } from 'express';
 import { passwordStrength } from 'check-password-strength';
 import { isEmail } from '../utils/isEmail';
 import { LoginData } from '../interfaces/loginData';
-import { User } from '../interfaces/userInterface';
 import { generateAccessToken } from '../utils/jwt';
+import { sendWelcomeEmail } from '../utils/sendWelcomeEmail';
+import { transporter } from './mail.service';
 
+
+/**
+ *
+ * @param req
+ * @param res
+ * @param next
+ * @returns
+ */
+
+//create user
 async function createUser(req: Request, res: Response, next: NextFunction) {
   const { username, firstname, lastname, email, password } = req.body;
 
+  //check if username or email already exists
   try {
     const userNameExists = await db('usr_info').where({ username });
     const emailExists = await db('usr_info').where({ email });
@@ -25,6 +37,7 @@ async function createUser(req: Request, res: Response, next: NextFunction) {
     console.log(error);
   }
 
+  //check password strength
   const passwordDifficulty = passwordStrength(password);
 
   if (
@@ -36,22 +49,26 @@ async function createUser(req: Request, res: Response, next: NextFunction) {
 
   const SALT_ROUNDS = 10;
 
+  //hash password
   bcrypt
     .hash(password, SALT_ROUNDS)
     .then(async (hash) => {
       if (hash) {
-        try {
-          const newUser = await db('usr_info').insert({
+        db('usr_info')
+          .insert({
             username,
             firstname,
             lastname,
             email,
             password: hash,
+          })
+          .then((newUser) => {
+            sendWelcomeEmail(transporter, newUser[0])
+            res.status(201).json({ newUser });
+          })
+          .catch((error) => {
+            return res.status(500).json({ error: error.message });
           });
-          res.status(201).json({ newUser });
-        } catch (error: any) {
-          return res.status(500).json({ error: error.message });
-        }
       }
     })
     .catch((error) => {
@@ -59,9 +76,11 @@ async function createUser(req: Request, res: Response, next: NextFunction) {
     });
 }
 
+//login user
 async function login(req: Request, res: Response, next: NextFunction) {
   const { emailOrUsername, password } = req.body;
 
+  //check if user exists
   const userData: LoginData = { email: '', password, username: '' };
   let user;
 
@@ -83,6 +102,7 @@ async function login(req: Request, res: Response, next: NextFunction) {
     }
   }
 
+  //compare password
   bcrypt
     .compare(password, user[0].password)
     .then((result) => {

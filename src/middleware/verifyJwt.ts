@@ -3,6 +3,7 @@ import * as jwt from 'jsonwebtoken';
 import { tokenData } from '../config';
 import { NextFunction, Request, Response } from 'express';
 
+
 export function verifyToken(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers['authorization'];
 
