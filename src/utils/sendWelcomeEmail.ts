@@ -37,7 +37,7 @@ const generateWelcomeMessage = function (firstName: string) {
 
 export const sendWelcomeEmail = async function (
   transporter: any,
-  userData: User
+  userData: any
 ) {
   try {
     let info = await transporter.sendMail({

@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import db from '../database/db';
+import { User } from '../database/models/user.model';
 import { Request, Response, NextFunction } from 'express';
 import { passwordStrength } from 'check-password-strength';
 import { isEmail } from '../utils/isEmail';
@@ -7,7 +7,7 @@ import { LoginData } from '../interfaces/loginData';
 import { generateAccessToken } from '../utils/jwt';
 import { sendWelcomeEmail } from '../utils/sendWelcomeEmail';
 import { transporter } from './mail.service';
-
+import { getFromDB, addToDB } from '../repository/user.repository';
 
 /**
  *
@@ -23,14 +23,14 @@ async function createUser(req: Request, res: Response, next: NextFunction) {
 
   //check if username or email already exists
   try {
-    const userNameExists = await db('usr_info').where({ username });
-    const emailExists = await db('usr_info').where({ email });
+    const userNameExists = await getFromDB(username, User);
+    const emailExists = await getFromDB(email, User);
 
-    if (userNameExists.length !== 0) {
+    if (userNameExists != null) {
       return res.status(400).json({ message: 'Username already exists' });
     }
 
-    if (emailExists.length !== 0) {
+    if (emailExists != null) {
       return res.status(400).json({ message: 'Email already exists' });
     }
   } catch (error) {
@@ -54,16 +54,15 @@ async function createUser(req: Request, res: Response, next: NextFunction) {
     .hash(password, SALT_ROUNDS)
     .then(async (hash) => {
       if (hash) {
-        db('usr_info')
-          .insert({
-            username,
-            firstname,
-            lastname,
-            email,
-            password: hash,
-          })
+        addToDB(User, {
+          username,
+          firstname,
+          lastname,
+          email,
+          password: hash,
+        })
           .then((newUser) => {
-            sendWelcomeEmail(transporter, newUser[0])
+            sendWelcomeEmail(transporter, newUser);
             res.status(201).json({ newUser });
           })
           .catch((error) => {
@@ -88,23 +87,23 @@ async function login(req: Request, res: Response, next: NextFunction) {
 
   if (isInputEmail) {
     userData.email = emailOrUsername;
-    user = await db('usr_info').where({ email: emailOrUsername });
+    user = await getFromDB({ email: emailOrUsername }, User);
 
-    if (user.length === 0) {
+    if (!user) {
       return res.status(401).json({ message: 'Invalid Credentials' });
     }
   } else {
     userData.username = emailOrUsername;
-    user = await db('usr_info').where({ username: emailOrUsername });
+    user = await getFromDB({ userName: emailOrUsername }, User);
 
-    if (user.length === 0) {
+    if (!user) {
       return res.status(401).json({ message: 'Invalid Credentials' });
     }
   }
 
   //compare password
   bcrypt
-    .compare(password, user[0].password)
+    .compare(password, user.password)
     .then((result) => {
       console.log(result);
       const token = generateAccessToken(
@@ -117,3 +116,7 @@ async function login(req: Request, res: Response, next: NextFunction) {
       return res.status(401).json({ message: 'Invalid Credentials' });
     });
 }
+
+async function forgotPassword() {}
+
+async function resetPassword() {}
