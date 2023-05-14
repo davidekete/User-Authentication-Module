@@ -15,7 +15,7 @@ export const Token = sq.define('token', {
     allowNull: false,
   },
   user_id: {
-    type: DataTypes.STRING, //
+    type: DataTypes.STRING,
     allowNull: false,
   },
   created_at: {

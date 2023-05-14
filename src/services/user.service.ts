@@ -4,7 +4,7 @@ import { Request, Response, NextFunction } from 'express';
 import { passwordStrength } from 'check-password-strength';
 import { isEmail } from '../utils/isEmail';
 import { LoginData } from '../interfaces/loginData';
-import { generateAccessToken } from '../utils/jwt';
+import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
 import { sendWelcomeEmail } from '../utils/sendWelcomeEmail';
 import { transporter } from './mail.service';
 import { getFromDB, addToDB } from '../repository/user.repository';
@@ -75,7 +75,13 @@ async function createUser(req: Request, res: Response, next: NextFunction) {
     });
 }
 
-//login user
+/**
+ *
+ * @param req
+ * @param res
+ * @param next
+ * @returns
+ */
 async function login(req: Request, res: Response, next: NextFunction) {
   const { emailOrUsername, password } = req.body;
 
@@ -109,12 +115,23 @@ async function login(req: Request, res: Response, next: NextFunction) {
       const token = generateAccessToken(
         userData.email ? userData.email : userData.username
       );
-      return res.status(200).json({ message: 'User Logged in Successfully' });
+
+      const refreshToken = generateRefreshToken(
+        userData.email ? userData.email : userData.username
+      );
+
+      return res
+        .status(200)
+        .json({ message: 'User Logged in Successfully', token, refreshToken });
     })
     .catch((error) => {
       console.log(error);
       return res.status(401).json({ message: 'Invalid Credentials' });
     });
+}
+
+async function refreshToken(req: Request, res: Response) {
+  
 }
 
 async function forgotPassword() {}

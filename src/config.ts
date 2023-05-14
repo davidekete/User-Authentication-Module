@@ -9,9 +9,11 @@ export const dbConfig = {
   DATABASE_URI: process.env.DATABASE_URI,
 };
 
-export const tokenData = {
+export const jwtConfig = {
   JWT_SECRET: process.env.JWT_TOKEN_SECRET,
   JWT_EXPIRY: process.env.JWT_EXPIRY || '86400s',
+  REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET,
+  REFRESH_TOKEN_EXPIRY: process.env.REFRESH_TOKEN_EXPIRY || '604800s',
 };
 
 export const mailConfig = {

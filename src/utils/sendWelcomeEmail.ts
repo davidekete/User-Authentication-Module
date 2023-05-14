@@ -8,7 +8,7 @@ const generateWelcomeMessage = function (firstName: string) {
   <table style="max-width: 600px; margin: 0 auto; padding: 20px;">
     <tr>
       <td align="center" style="padding-bottom: 20px;">
-        <img src="https://i.imgur.com/iVqcswm.png[/img]" alt="Company Logo" width="150">
+        <img src="https://i.imgur.com/iVqcswm.png" alt="Company Logo" width="150">
       </td>
     </tr>
     <tr>
@@ -47,9 +47,9 @@ export const sendWelcomeEmail = async function (
       html: generateWelcomeMessage(userData.firstname),
     });
 
-    console.log('Message sent: %s', info.messageId);
+    console.log(`Message sent:, ${info.messageId}`);
 
-    console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+    console.log(`Preview URL:, ${nodemailer.getTestMessageUrl(info)}`);
   } catch (error) {
     throw error;
   }
