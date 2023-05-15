@@ -1,6 +1,6 @@
 import * as jwt from 'jsonwebtoken';
 
-import { tokenData } from '../config';
+import { jwtConfig } from '../config';
 import { NextFunction, Request, Response } from 'express';
 
 /**
@@ -19,7 +19,7 @@ export function verifyToken(req: Request, res: Response, next: NextFunction) {
     return res.status(401).send('Authorization failed. No access token.');
   }
 
-  jwt.verify(token, tokenData.JWT_SECRET as jwt.Secret, (err, user) => {
+  jwt.verify(token, jwtConfig.JWT_SECRET as jwt.Secret, (err, user) => {
     if (err) {
       console.log(err);
       return res.status(403).send('Could not verify token');

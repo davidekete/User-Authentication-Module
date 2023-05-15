@@ -1,5 +1,4 @@
-import nodemailer, { TransportOptions, Transporter } from 'nodemailer';
-import { User } from '../interfaces/userInterface';
+import nodemailer from 'nodemailer';
 
 const generateWelcomeMessage = function (firstName: string) {
   return `
@@ -53,4 +52,31 @@ export const sendWelcomeEmail = async function (
   } catch (error) {
     throw error;
   }
+};
+
+const generatePasswordResetMessage = function (
+  firstName: string,
+  link: string
+) {
+  return `
+  <body>
+  <table style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; border-collapse: collapse;">
+    <tr>
+      <td style="background-color: #ffffff; padding: 40px; text-align: center;">
+        <img src="https://i.imgur.com/iVqcswm.png" alt="Logo" style="max-width: 150px; margin-bottom: 20px;">
+        <h2 style="color: #000000;">Password Reset</h2>
+        <p style="margin-bottom: 30px; color: #000000;">You've requested a password reset for your account.</p>
+        <p style="margin-bottom: 30px; color: #000000;">Please click the button below to reset your password:</p>
+        <a href=${link} style="display: inline-block; background-color: #007bff; color: #ffffff; text-decoration: none; font-weight: bold; padding: 10px 20px; border-radius: 4px;">Reset Password</a>
+      </td>
+    </tr>
+    <tr>
+      <td style="background-color: #f5f5f5; padding: 20px; text-align: center;">
+        <p style="margin-bottom: 0; color: #000000;">We're here to help if you need it. Visit the Help Center for more info or contact us..</p>
+        <p style="margin-bottom: 0; color: #000000;">If you didn't request a password reset, please ignore this email.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+`;
 };

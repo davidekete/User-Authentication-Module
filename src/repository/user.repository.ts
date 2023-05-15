@@ -2,7 +2,7 @@ import { Model, ModelStatic } from 'sequelize';
 
 export const getFromDB = async function (
   property: any,
-  model: ModelStatic<Model<any, any>>
+  model: any
 ) {
   return await model.findOne({ where: { property } })
 };
@@ -13,3 +13,5 @@ export const addToDB = async function (
 ) {
   return await model.create({ ...params });
 };
+
+//ModelStatic<Model<any, any>>
