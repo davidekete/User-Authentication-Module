@@ -4,7 +4,7 @@ import { Request, Response } from 'express';
 import { passwordStrength } from 'check-password-strength';
 import { isEmail } from '../utils/isEmail';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
-import { sendWelcomeEmail } from '../utils/sendEmail';
+import { sendWelcomeEmail } from './mail.service';
 import { transporter } from './mail.service';
 import { getFromDB, addToDB } from '../repository/user.repository';
 import { Token } from '../database/models/token.model';
@@ -12,11 +12,11 @@ import * as jwt from 'jsonwebtoken';
 import { jwtConfig } from '../config';
 
 /**
- *
+ * creates a new user
  * @param req
  * @param res
  * @param next
- * @returns
+ * @returns a user object
  */
 
 //create user
@@ -78,11 +78,11 @@ async function createUser(req: Request, res: Response) {
 }
 
 /**
- *
+ * logs in a user
  * @param req
  * @param res
  * @param next
- * @returns
+ * @returns void
  */
 
 async function login(req: Request, res: Response) {
@@ -127,6 +127,12 @@ async function login(req: Request, res: Response) {
   }
 }
 
+/**
+ *
+ * @param req
+ * @param res
+ * @returns void
+ */
 async function refreshToken(req: Request, res: Response) {
   const refreshToken = req.body.token;
 
@@ -156,12 +162,17 @@ async function refreshToken(req: Request, res: Response) {
 }
 
 async function forgotPassword(req: Request, res: Response) {
+  const { email } = req.body;
 
+  //validate if input is email
 
+  const user = getFromDB(email, User);
 
+  if (!user) {
+    return res.status(403).json({ message: 'Invalid user credentials' });
+  }
+
+  let token = await Token.findOne({ where: { user_id: user.id } });
 }
 
-async function resetPassword(req: Request, res: Response) {
-
-
-}
+async function resetPassword(req: Request, res: Response) {}
