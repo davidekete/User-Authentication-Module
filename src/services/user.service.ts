@@ -217,10 +217,74 @@ async function resetPassword(req: Request, res: Response) {
       await user.save().then(() => {
         res.status(200).json({ message: 'Password reset successful' });
         //Send reset password email
-      })
+      });
     });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
+}
+
+async function changePassword(req: Request, res: Response) {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    const user = await getFromDB(req.user, User);
+
+    if (!user) {
+      return res.status(403).json({ message: 'Invalid user credentials' });
+    }
+
+    const passwordsMatch = await bcrypt.compare(oldPassword, newPassword);
+
+    if (passwordsMatch) {
+      return res
+        .status(403)
+        .json({ message: 'Old password and new password cannot be the same' });
+    }
+
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Invalid Credentials' });
+    }
+
+    const passwordDifficulty = passwordStrength(newPassword);
+
+    if (
+      passwordDifficulty.value !== 'Strong' &&
+      passwordDifficulty.value !== 'Medium'
+    ) {
+      return res.status(400).json({ message: 'Password is not strong enough' });
+    }
+
+    const hash = await bcrypt.hash(newPassword, passConfig.SALT_ROUNDS);
+
+    user.password = hash;
+
+    await user.save().then(() => {
+      res.status(200).json({ message: 'Password changed successfully' });
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
+
+async function logout(req: Request, res: Response) {
+  /**
+   * Depending on your application's needs, you can choose to expire the access tokens quickly or store the access tokens in a database
+   * and invalidate them when a user logs out.
+   * Allowing the frontend to handle logout requests by deleting the access and refresh tokens from the browser's local storage is a viable option.
+   * However, if your application requires a lot of security and you want to be able to invalidate tokens, you can store the tokens in a database.
+   * Although, storing the jsonwebtoken in a database renders the stateless nature of the token useless.
+   */
+}
+
+exports = {
+  login,
+  refreshToken,
+  forgotPassword,
+  resetPassword,
+  changePassword,
 }
