@@ -10,7 +10,6 @@ import {
 } from '../utils/jwt';
 import { sendResetPasswordEmail, sendWelcomeEmail } from './mail.service';
 import { getFromDB, addToDB } from '../repository/user.repository';
-import { Token } from '../database/models/token.model';
 import * as jwt from 'jsonwebtoken';
 import { jwtConfig, serverConfig, passConfig } from '../config';
 
@@ -141,12 +140,6 @@ async function refreshToken(req: Request, res: Response) {
     return res.status(401).json({ message: 'No refresh token provided' });
   }
 
-  const validRefreshToken = await getFromDB(refreshToken, Token);
-
-  if (!validRefreshToken) {
-    return res.status(403).json({ message: 'Refresh token is not valid' });
-  }
-
   jwt.verify(
     refreshToken,
     jwtConfig.REFRESH_TOKEN_SECRET as jwt.Secret,
@@ -271,7 +264,7 @@ async function changePassword(req: Request, res: Response) {
   }
 }
 
-async function logout(req: Request, res: Response) {
+async function logout() {
   /**
    * Depending on your application's needs, you can choose to expire the access tokens quickly or store the access tokens in a database
    * and invalidate them when a user logs out.
@@ -287,4 +280,4 @@ exports = {
   forgotPassword,
   resetPassword,
   changePassword,
-}
+};
