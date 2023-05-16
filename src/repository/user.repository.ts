@@ -1,17 +1,16 @@
 import { Model, ModelStatic } from 'sequelize';
 
-export const getFromDB = async function (
-  property: any,
-  model: any
-) {
-  return await model.findOne({ where: { property } })
+const getFromDB = async function (property: any, model: any) {
+  return await model.findOne({ where: { property } });
 };
 
-export const addToDB = async function (
+const addToDB = async function (
   model: ModelStatic<Model<any, any>>,
   params: any
 ) {
   return await model.create({ ...params });
 };
+
+export { getFromDB, addToDB };
 
 //ModelStatic<Model<any, any>>

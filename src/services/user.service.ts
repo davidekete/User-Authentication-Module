@@ -274,7 +274,8 @@ async function logout() {
    */
 }
 
-exports = {
+export {
+  createUser,
   login,
   refreshToken,
   forgotPassword,

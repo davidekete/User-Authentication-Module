@@ -6,7 +6,7 @@ import { jwtConfig } from '../config';
  * @param payload
  * @returns JWT token
  */
-export function generateAccessToken(payload: any) {
+function generateAccessToken(payload: any) {
   return jwt.sign({ payload }, jwtConfig.JWT_SECRET as jwt.Secret, {
     expiresIn: jwtConfig.JWT_EXPIRY,
   });
@@ -17,14 +17,16 @@ export function generateAccessToken(payload: any) {
  * @param payload
  * @returns Refresh token
  */
-export function generateRefreshToken(payload: any) {
+function generateRefreshToken(payload: any) {
   return jwt.sign({ payload }, jwtConfig.REFRESH_TOKEN_SECRET as jwt.Secret, {
     expiresIn: jwtConfig.REFRESH_TOKEN_EXPIRY,
   });
 }
 
-export function generateResetToken(payload: any, secret: string) {
+function generateResetToken(payload: any, secret: string) {
   return jwt.sign({ payload }, secret, {
     expiresIn: jwtConfig.RESET_TOKEN_EXPIRY,
   });
 }
+
+export { generateAccessToken, generateRefreshToken, generateResetToken };
