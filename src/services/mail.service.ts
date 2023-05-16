@@ -1,7 +1,10 @@
 import nodemailer from 'nodemailer';
 import { mailConfig } from '../config';
 
-export const transporter = nodemailer.createTransport({
+/**
+ * Creates a nodemailer transporter object
+ */
+const transporter = nodemailer.createTransport({
   //@ts-expect-error
   host: mailConfig.HOST,
   port: mailConfig.PORT,
@@ -11,10 +14,9 @@ export const transporter = nodemailer.createTransport({
   },
 });
 
-
 /**
  * Generates and returns a HTML string for the welcome email
- * @param firstName 
+ * @param firstName
  * @returns HTML string
  */
 const generateWelcomeMessage = function (firstName: string) {
@@ -51,9 +53,12 @@ const generateWelcomeMessage = function (firstName: string) {
   `;
 };
 
-
+/**
+ * Sends a welcome email to the user
+ * @param transporter
+ * @param userData
+ */
 export const sendWelcomeEmail = async function (
-  transporter: any,
   userData: any
 ) {
   try {
@@ -74,8 +79,8 @@ export const sendWelcomeEmail = async function (
 
 /**
  * Generates and returns a HTML string for the password reset email
- * @param firstName 
- * @param link 
+ * @param firstName
+ * @param link
  * @returns HTML string
  */
 const generatePasswordResetMessage = function (
@@ -107,16 +112,15 @@ const generatePasswordResetMessage = function (
 };
 
 export const sendResetPasswordEmail = async function (
-  transporter: any,
-  userData: any,
+  user: any,
   link: string
 ) {
   try {
     let info = await transporter.sendMail({
       from: '"Fred Foo 👻" <foo@example.com>', // sender address
-      to: userData.email,
+      to: user.email,
       subject: 'Welcome!!!',
-      html: generatePasswordResetMessage(userData.firstname, link),
+      html: generatePasswordResetMessage(user.firstname, link),
     });
 
     console.log(`Message sent:, ${info.messageId}`);

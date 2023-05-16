@@ -14,7 +14,7 @@ export function generateAccessToken(payload: any) {
 
 /**
  * Generates and returns a refresh token
- * @param payload 
+ * @param payload
  * @returns Refresh token
  */
 export function generateRefreshToken(payload: any) {
@@ -23,3 +23,8 @@ export function generateRefreshToken(payload: any) {
   });
 }
 
+export function generateResetToken(payload: any, secret: string) {
+  return jwt.sign({ payload }, secret, {
+    expiresIn: jwtConfig.RESET_TOKEN_EXPIRY,
+  });
+}

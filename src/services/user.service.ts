@@ -3,13 +3,16 @@ import { User } from '../database/models/user.model';
 import { Request, Response } from 'express';
 import { passwordStrength } from 'check-password-strength';
 import { isEmail } from '../utils/isEmail';
-import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
-import { sendWelcomeEmail } from './mail.service';
-import { transporter } from './mail.service';
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  generateResetToken,
+} from '../utils/jwt';
+import { sendResetPasswordEmail, sendWelcomeEmail } from './mail.service';
 import { getFromDB, addToDB } from '../repository/user.repository';
 import { Token } from '../database/models/token.model';
 import * as jwt from 'jsonwebtoken';
-import { jwtConfig } from '../config';
+import { jwtConfig, serverConfig, passConfig } from '../config';
 
 /**
  * creates a new user
@@ -49,11 +52,9 @@ async function createUser(req: Request, res: Response) {
     return res.status(400).json({ message: 'Password is not strong enough' });
   }
 
-  const SALT_ROUNDS = 10;
-
   //hash password
   bcrypt
-    .hash(password, SALT_ROUNDS)
+    .hash(password, passConfig.SALT_ROUNDS)
     .then(async (hash) => {
       if (hash) {
         addToDB(User, {
@@ -64,7 +65,7 @@ async function createUser(req: Request, res: Response) {
           password: hash,
         })
           .then((newUser) => {
-            sendWelcomeEmail(transporter, newUser);
+            sendWelcomeEmail(newUser);
             res.status(201).json({ newUser });
           })
           .catch((error) => {
@@ -162,17 +163,64 @@ async function refreshToken(req: Request, res: Response) {
 }
 
 async function forgotPassword(req: Request, res: Response) {
-  const { email } = req.body;
+  try {
+    const { email } = req.body;
 
-  //validate if input is email
+    //validate if input is email
 
-  const user = getFromDB(email, User);
+    const user = await getFromDB(email, User);
 
-  if (!user) {
-    return res.status(403).json({ message: 'Invalid user credentials' });
+    if (!user) {
+      return res.status(403).json({ message: 'Invalid user credentials' });
+    }
+
+    const jwtResetSecret = `${jwtConfig.RESET_TOKEN_BASE}${user.password}`;
+    const resetToken = generateResetToken(email, jwtResetSecret);
+
+    const link = `${serverConfig.BASE_URL}/${user.id}/${resetToken}`;
+    await sendResetPasswordEmail(user, link);
+    res.status(200).json({ message: 'Reset link sent to email' });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
-
-  let token = await Token.findOne({ where: { user_id: user.id } });
 }
 
-async function resetPassword(req: Request, res: Response) {}
+async function resetPassword(req: Request, res: Response) {
+  try {
+    const { id, token } = req.params;
+
+    const user = await getFromDB(id, User);
+
+    if (!user) {
+      return res.status(403).json({ message: 'Invalid reset link' });
+    }
+
+    const jwtResetSecret = `${jwtConfig.RESET_TOKEN_BASE}${user.password}`;
+
+    jwt.verify(token, jwtResetSecret, async (err: any, decoded: any) => {
+      if (err) {
+        return res
+          .status(403)
+          .json({ message: 'Invalid or expired reset link' });
+      }
+
+      /**
+       * Show password reset screen
+       */
+      const newPassword = req.body.password;
+
+      const hash = await bcrypt.hash(newPassword, passConfig.SALT_ROUNDS);
+
+      user.password = hash;
+
+      await user.save().then(() => {
+        res.status(200).json({ message: 'Password reset successful' });
+        //Send reset password email
+      })
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
