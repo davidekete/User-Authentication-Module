@@ -1,26 +1,25 @@
 import express from 'express';
 import { verifyToken } from '../middleware/verifyJwt';
 import {
-  createUser,
-  login,
-  changePassword,
+  createNewUser,
+  userLogin,
+  getRefreshToken,
+  changeUserPassword,
   forgotPassword,
-  refreshToken,
-  resetPassword,
-} from '../services/user.service';
+  resetUserPassword,
+} from '../controllers/user.controller';
 
 const router = express.Router();
+router.post('api/signup', createNewUser);
 
-router.post('api/auth/login', login);
+router.post('api/auth/login', userLogin);
 
-router.post('api/auth/logout', verifyToken);
+router.post('api/auth/refresh-token', getRefreshToken);
 
-router.post('api/auth/refresh-token', refreshToken);
-
-router.post('api/signup', createUser);
+router.post('api/change-password', verifyToken, changeUserPassword);
 
 router.post('api/forgot-password', forgotPassword);
 
-router.post('api/change-password', verifyToken, changePassword);
+router.post('api/reset-password', resetUserPassword);
 
-router.post('api/reset-password', resetPassword);
+router.post('api/auth/logout', verifyToken);

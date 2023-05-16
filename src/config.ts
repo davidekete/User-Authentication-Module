@@ -4,6 +4,7 @@ dotenv.config();
 const serverConfig = {
   PORT: process.env.PORT || 3000,
   BASE_URL: process.env.BASE_URL,
+  ENVIRONMENT: process.env.NODE_ENV || 'development',
 };
 
 const passConfig = {

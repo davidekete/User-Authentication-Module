@@ -1,6 +1,5 @@
 import bcrypt from 'bcrypt';
 import { User } from '../database/models/user.model';
-import { Request, Response } from 'express';
 import { passwordStrength } from 'check-password-strength';
 import { isEmail } from '../utils/isEmail';
 import {
@@ -12,30 +11,36 @@ import { sendResetPasswordEmail, sendWelcomeEmail } from './mail.service';
 import { getFromDB, addToDB } from '../repository/user.repository';
 import * as jwt from 'jsonwebtoken';
 import { jwtConfig, serverConfig, passConfig } from '../config';
+import { generateError } from '../utils/generateError';
 
 /**
- * creates a new user
- * @param req
- * @param res
- * @param next
- * @returns a user object
+ * @description Creates a new user
+ * @param userName
+ * @param firstName
+ * @param lastName
+ * @param email
+ * @param password
  */
 
 //create user
-async function createUser(req: Request, res: Response) {
-  const { userName, firstName, lastName, email, password } = req.body;
-
+async function createUser(
+  userName: string,
+  firstName: string,
+  lastName: string,
+  email: string,
+  password: string
+) {
   //check if username or email already exists
   try {
     const userNameExists = await getFromDB(userName, User);
     const emailExists = await getFromDB(email, User);
 
     if (userNameExists != null) {
-      return res.status(400).json({ message: 'Username already exists' });
+      throw generateError('Username already exists', 400);
     }
 
     if (emailExists != null) {
-      return res.status(400).json({ message: 'Email already exists' });
+      throw generateError('Email already exists', 400);
     }
   } catch (error) {
     console.log(error);
@@ -48,7 +53,7 @@ async function createUser(req: Request, res: Response) {
     passwordDifficulty.value !== 'Strong' &&
     passwordDifficulty.value !== 'Medium'
   ) {
-    return res.status(400).json({ message: 'Password is not strong enough' });
+    throw generateError('Password is not strong enough', 400);
   }
 
   //hash password
@@ -65,29 +70,27 @@ async function createUser(req: Request, res: Response) {
         })
           .then((newUser) => {
             sendWelcomeEmail(newUser);
-            res.status(201).json({ newUser });
+            // res.status(201).json({ newUser });
           })
           .catch((error) => {
-            return res.status(500).json({ error: error.message });
+            throw generateError(error.message, 500);
           });
       }
     })
     .catch((error) => {
       console.log(error);
+      throw generateError(error.message, 500);
     });
 }
 
 /**
- * logs in a user
- * @param req
- * @param res
- * @param next
- * @returns void
+ * @description Logs in a user
+ * @param emailOrUsername
+ * @param password
+ * @returns Access token, refresh token and message
  */
 
-async function login(req: Request, res: Response) {
-  const { emailOrUsername, password } = req.body;
-
+async function login(emailOrUsername: string, password: string) {
   try {
     let user;
     let field;
@@ -104,40 +107,37 @@ async function login(req: Request, res: Response) {
     user = await getFromDB(query, User);
 
     if (!user) {
-      return res.status(401).json({ message: 'Invalid Credentials' });
+      throw generateError('Invalid Credentials', 401);
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid Credentials' });
+      throw generateError('Invalid Credentials', 401);
     }
 
     const token = generateAccessToken(user[field]);
     const refreshToken = generateRefreshToken(user[field]);
 
-    return res.status(200).json({
+    return {
       message: 'User Logged in Successfully',
       token,
       refreshToken,
-    });
+    };
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Internal Server Error' });
+    throw generateError('Internal Server Error', 500);
   }
 }
 
 /**
- *
- * @param req
- * @param res
- * @returns void
+ * @description grants a new access token based on a valid refresh token
+ * @param refreshToken
+ * @returns access token
  */
-async function refreshToken(req: Request, res: Response) {
-  const refreshToken = req.body.token;
-
+async function refreshToken(refreshToken: string) {
   if (!refreshToken) {
-    return res.status(401).json({ message: 'No refresh token provided' });
+    throw generateError('No refresh token provided', 401);
   }
 
   jwt.verify(
@@ -145,101 +145,109 @@ async function refreshToken(req: Request, res: Response) {
     jwtConfig.REFRESH_TOKEN_SECRET as jwt.Secret,
     (err: any, user: any) => {
       if (err) {
-        return res.status(403).json({ message: 'Refresh token is not valid' });
+        throw generateError('Refresh token is not valid', 403);
       }
 
       const accessToken = generateAccessToken(user);
 
-      return res.status(200).json({ accessToken });
+      return accessToken;
     }
   );
 }
 
-async function forgotPassword(req: Request, res: Response) {
+/**
+ * @description
+ * @param email
+ * @returns
+ */
+async function forgotPassword(email: string) {
   try {
-    const { email } = req.body;
-
-    //validate if input is email
-
     const user = await getFromDB(email, User);
 
     if (!user) {
-      return res.status(403).json({ message: 'Invalid user credentials' });
+      throw generateError('Invalid user credentials', 403);
     }
 
     const jwtResetSecret = `${jwtConfig.RESET_TOKEN_BASE}${user.password}`;
     const resetToken = generateResetToken(email, jwtResetSecret);
 
     const link = `${serverConfig.BASE_URL}/${user.id}/${resetToken}`;
-    await sendResetPasswordEmail(user, link);
-    res.status(200).json({ message: 'Reset link sent to email' });
-  } catch (error) {
+    return await sendResetPasswordEmail(user, link);
+  } catch (error: any) {
     console.log(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    throw generateError(error.message, 500);
   }
 }
 
-async function resetPassword(req: Request, res: Response) {
+/**
+ * @description Resets a user's password
+ * @param id
+ * @param token
+ * @param newPassword
+ */
+async function resetPassword(id: string, token: string, newPassword: string) {
   try {
-    const { id, token } = req.params;
-
     const user = await getFromDB(id, User);
 
     if (!user) {
-      return res.status(403).json({ message: 'Invalid reset link' });
+      throw generateError('Invalid reset link', 403);
     }
 
     const jwtResetSecret = `${jwtConfig.RESET_TOKEN_BASE}${user.password}`;
 
     jwt.verify(token, jwtResetSecret, async (err: any, decoded: any) => {
       if (err) {
-        return res
-          .status(403)
-          .json({ message: 'Invalid or expired reset link' });
+        throw generateError('Invalid or expired reset link', 403);
       }
 
       /**
        * Show password reset screen
        */
-      const newPassword = req.body.password;
 
       const hash = await bcrypt.hash(newPassword, passConfig.SALT_ROUNDS);
 
       user.password = hash;
 
-      await user.save().then(() => {
-        res.status(200).json({ message: 'Password reset successful' });
-        //Send reset password email
-      });
+      return await user.save();
     });
-  } catch (error) {
+  } catch (error: any) {
     console.log(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    throw generateError(error.message, 500);
   }
 }
 
-async function changePassword(req: Request, res: Response) {
+/**
+ * @description Changes a user's password
+ * @param oldPassword
+ * @param newPassword
+ * @param userObj
+ * @returns
+ */
+async function changePassword(
+  oldPassword: string,
+  newPassword: string,
+  userObj: any
+) {
   try {
-    const { oldPassword, newPassword } = req.body;
-
-    const user = await getFromDB(req.user, User);
+    const user = await getFromDB(userObj, User);
 
     if (!user) {
-      return res.status(403).json({ message: 'Invalid user credentials' });
+      throw generateError('Invalid user credentials', 403);
     }
 
     const passwordsMatch = await bcrypt.compare(oldPassword, newPassword);
 
     if (passwordsMatch) {
-      return res
-        .status(403)
-        .json({ message: 'Old password and new password cannot be the same' });
+      throw generateError(
+        'Old password and new password cannot be the same',
+        403
+      );
     }
 
     const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid Credentials' });
+      throw generateError('Invalid Credentials', 401);
     }
 
     const passwordDifficulty = passwordStrength(newPassword);
@@ -248,19 +256,17 @@ async function changePassword(req: Request, res: Response) {
       passwordDifficulty.value !== 'Strong' &&
       passwordDifficulty.value !== 'Medium'
     ) {
-      return res.status(400).json({ message: 'Password is not strong enough' });
+      throw generateError('Password is not strong enough', 400);
     }
 
     const hash = await bcrypt.hash(newPassword, passConfig.SALT_ROUNDS);
 
     user.password = hash;
 
-    await user.save().then(() => {
-      res.status(200).json({ message: 'Password changed successfully' });
-    });
-  } catch (error) {
+    return await user.save();
+  } catch (error: any) {
     console.log(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    throw generateError(error.message, 500);
   }
 }
 
