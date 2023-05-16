@@ -1,1 +1,1 @@
-//Contains application level validatation before sending to db
+//Contains application level validation before sending to db
