@@ -58,7 +58,7 @@ const generateWelcomeMessage = function (firstName: string) {
  * @param transporter
  * @param userData
  */
-export const sendWelcomeEmail = async function (userData: any) {
+const sendWelcomeEmail = async function (userData: any) {
   try {
     let info = await transporter.sendMail({
       from: '"Your Friendly Neighborhood Spiderman" <foo@example.com>', // sender address
@@ -109,12 +109,12 @@ const generatePasswordResetMessage = function (
 `;
 };
 
-export const sendResetPasswordEmail = async function (user: any, link: string) {
+const sendResetPasswordEmail = async function (user: any, link: string) {
   try {
     let info = await transporter.sendMail({
-      from: '"Fred Foo 👻" <foo@example.com>', // sender address
+      from: '"The Grim Reaper 👻" <foo@example.com>', // sender address
       to: user.email,
-      subject: 'Welcome!!!',
+      subject: 'Password Reset',
       html: generatePasswordResetMessage(user.firstname, link),
     });
 
@@ -126,6 +126,4 @@ export const sendResetPasswordEmail = async function (user: any, link: string) {
   }
 };
 
-/**
- * NOTES: Refactor the sendResetPasswordEmail function and the sendWelcomeEmail function into one function to maintain the DRY principle
- */
+export { sendWelcomeEmail, sendResetPasswordEmail };

@@ -11,7 +11,7 @@ app.use(cors());
 testDbConnection();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(morgan('dev'));
+app.use(morgan('combined'));
 app.use(router);
 
 app.listen(serverConfig.PORT, () => {

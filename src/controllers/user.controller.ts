@@ -4,7 +4,7 @@ import {
   login,
   changePassword,
   forgotPassword as forgotPasswordService,
-  refreshToken,
+  refreshToken as refreshTokenService,
   resetPassword,
 } from '../services/user.service';
 import Joi from 'joi';
@@ -84,7 +84,7 @@ async function getRefreshToken(req: Request, res: Response) {
   }
 
   try {
-    const { accessToken } = await refreshToken(refreshToken);
+    const accessToken = await refreshTokenService(refreshToken);
 
     return res.status(200).json({ accessToken });
   } catch (error: any) {
@@ -109,7 +109,9 @@ async function forgotPassword(req: Request, res: Response) {
 
   try {
     await forgotPasswordService(email);
-    return res.status(200).json({ message: 'Email sent' });
+    return res
+      .status(200)
+      .json({ message: `We've sent a password reset link to your email` });
   } catch (error) {
     return res.status(500).json({ error });
   }
@@ -134,8 +136,9 @@ async function resetUserPassword(req: Request, res: Response) {
   const { newPassword } = req.body;
 
   try {
-    await resetPassword(id, token, newPassword);
-    return res.status(200).json({ message: 'Password reset successfully' });
+    await resetPassword(id, token, newPassword).then(() => {
+      return res.status(200).json({ message: 'Password reset successfully' });
+    });
   } catch (error) {
     return res.status(500).json({ error });
   }
