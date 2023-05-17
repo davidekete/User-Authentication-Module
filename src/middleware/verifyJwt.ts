@@ -4,11 +4,11 @@ import { jwtConfig } from '../config';
 import { NextFunction, Request, Response } from 'express';
 
 /**
- * 
- * @param req 
- * @param res 
- * @param next 
- * @returns 
+ *
+ * @param req
+ * @param res
+ * @param next
+ * @returns
  */
 export function verifyToken(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers['authorization'];
@@ -24,7 +24,10 @@ export function verifyToken(req: Request, res: Response, next: NextFunction) {
       console.log(err);
       return res.status(403).send('Could not verify token');
     }
-    req.user = user;
+    if (user) {
+      req.user = <any>user;
+    }
+    // req.user = user;
   });
   next();
 }

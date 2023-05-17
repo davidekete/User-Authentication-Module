@@ -9,6 +9,7 @@ import {
   resetUserPassword,
 } from '../controllers/user.controller';
 
+
 const router = express.Router();
 router.post('api/signup', createNewUser);
 
@@ -23,3 +24,5 @@ router.post('api/forgot-password', forgotPassword);
 router.post('api/reset-password', resetUserPassword);
 
 router.post('api/auth/logout', verifyToken);
+
+export default router;
