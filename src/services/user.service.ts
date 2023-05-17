@@ -70,7 +70,6 @@ async function createUser(
         })
           .then((newUser) => {
             sendWelcomeEmail(newUser);
-            // res.status(201).json({ newUser });
           })
           .catch((error) => {
             throw generateError(error.message, 500);
@@ -121,7 +120,7 @@ async function login(emailOrUsername: string, password: string) {
 
     return {
       message: 'User Logged in Successfully',
-      token,
+      accessToken: token,
       refreshToken,
     };
   } catch (error) {
@@ -136,10 +135,6 @@ async function login(emailOrUsername: string, password: string) {
  * @returns access token
  */
 async function refreshToken(refreshToken: string) {
-  if (!refreshToken) {
-    throw generateError('No refresh token provided', 401);
-  }
-
   jwt.verify(
     refreshToken,
     jwtConfig.REFRESH_TOKEN_SECRET as jwt.Secret,
@@ -172,7 +167,7 @@ async function forgotPassword(email: string) {
     const resetToken = generateResetToken(email, jwtResetSecret);
 
     const link = `${serverConfig.BASE_URL}/${user.id}/${resetToken}`;
-    return await sendResetPasswordEmail(user, link);
+    await sendResetPasswordEmail(user, link);
   } catch (error: any) {
     console.log(error);
     throw generateError(error.message, 500);
