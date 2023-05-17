@@ -2,7 +2,7 @@ import { sq } from '../db';
 import { DataTypes } from 'sequelize';
 
 export const User = sq.define('user', {
-  userName: {
+  username: {
     type: DataTypes.STRING,
     allowNull: false,
     unique: true,
@@ -11,13 +11,14 @@ export const User = sq.define('user', {
     type: DataTypes.STRING,
     allowNull: false,
     unique: true,
+    primaryKey: true,
   },
 
-  firstName: {
+  firstname: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  lastName: {
+  lastname: {
     type: DataTypes.STRING,
     allowNull: false,
   },
@@ -26,3 +27,8 @@ export const User = sq.define('user', {
     allowNull: false,
   },
 });
+
+(async () => {
+  await User.sync();
+  console.log('User Model synced');
+})();

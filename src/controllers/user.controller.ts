@@ -10,20 +10,20 @@ import {
 import Joi from 'joi';
 
 async function createNewUser(req: Request, res: Response) {
-  const { userName, firstName, lastName, email, password } = req.body;
+  const { username, firstname, lastname, email, password } = req.body;
 
   const schema = Joi.object({
-    userName: Joi.string().required(),
-    firstName: Joi.string().required(),
-    lastName: Joi.string().required(),
+    username: Joi.string().required(),
+    firstname: Joi.string().required(),
+    lastname: Joi.string().required(),
     email: Joi.string().email().required(),
     password: Joi.string().required(),
   });
 
   const { error } = schema.validate({
-    userName,
-    firstName,
-    lastName,
+    username,
+    firstname,
+    lastname,
     email,
     password,
   });
@@ -34,9 +34,9 @@ async function createNewUser(req: Request, res: Response) {
 
   try {
     const newUser = await createUser(
-      userName,
-      firstName,
-      lastName,
+      username,
+      firstname,
+      lastname,
       email,
       password
     );
@@ -159,6 +159,7 @@ async function changeUserPassword(req: Request, res: Response) {
   }
 
   try {
+    //@ts-expect-error
     await changePassword(oldPassword, newPassword, req.user);
     return res.status(200).json({ message: 'Password changed successfully' });
   } catch (error: any) {

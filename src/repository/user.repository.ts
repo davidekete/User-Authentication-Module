@@ -8,7 +8,7 @@ const addToDB = async function (
   model: ModelStatic<Model<any, any>>,
   params: any
 ) {
-  return await model.create({ ...params });
+  return await model.create(params);
 };
 
 export { getFromDB, addToDB };

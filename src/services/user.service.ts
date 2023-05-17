@@ -12,6 +12,7 @@ import { getFromDB, addToDB } from '../repository/user.repository';
 import * as jwt from 'jsonwebtoken';
 import { jwtConfig, serverConfig, passConfig } from '../config';
 import { generateError } from '../utils/generateError';
+import e from 'express';
 
 /**
  * @description Creates a new user
@@ -24,23 +25,23 @@ import { generateError } from '../utils/generateError';
 
 //create user
 async function createUser(
-  userName: string,
-  firstName: string,
-  lastName: string,
+  username: string,
+  firstname: string,
+  lastname: string,
   email: string,
   password: string
 ) {
   //check if username or email already exists
   try {
-    const userNameExists = await getFromDB(userName, User);
+    const userNameExists = await getFromDB(username, User);
     const emailExists = await getFromDB(email, User);
 
     if (userNameExists != null) {
-      throw generateError('Username already exists', 400);
+      throw generateError('Duplicate username entry', 400, 'Username already exists');
     }
 
     if (emailExists != null) {
-      throw generateError('Email already exists', 400);
+      throw generateError('Duplicate email entry', 400, 'Email already exists');
     }
   } catch (error) {
     console.log(error);
@@ -53,33 +54,30 @@ async function createUser(
     passwordDifficulty.value !== 'Strong' &&
     passwordDifficulty.value !== 'Medium'
   ) {
-    throw generateError('Password is not strong enough', 400);
+    throw generateError('Password difficulty', 400,'Password is not strong enough');
   }
 
   //hash password
-  bcrypt
-    .hash(password, passConfig.SALT_ROUNDS)
-    .then(async (hash) => {
-      if (hash) {
-        addToDB(User, {
-          userName,
-          firstName,
-          lastName,
-          email,
-          password: hash,
-        })
-          .then((newUser) => {
-            sendWelcomeEmail(newUser);
-          })
-          .catch((error) => {
-            throw generateError(error.message, 500);
-          });
-      }
-    })
-    .catch((error) => {
-      console.log(error);
-      throw generateError(error.message, 500);
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    //create user
+    const newUser = await addToDB(User, {
+      username,
+      firstname,
+      lastname,
+      email,
+      password: hashedPassword,
     });
+
+    sendWelcomeEmail(newUser);
+
+    return newUser;
+  } catch (error: any) {
+    console.log(error);
+    throw generateError(error.message, 500, error.errors[0].message);
+  }
 }
 
 /**
@@ -106,13 +104,13 @@ async function login(emailOrUsername: string, password: string) {
     user = await getFromDB(query, User);
 
     if (!user) {
-      throw generateError('Invalid Credentials', 401);
+      throw generateError('Invalid Credentials', 401, 'Invalid Credentials');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      throw generateError('Invalid Credentials', 401);
+      throw generateError('Invalid Credentials', 401, 'Invalid Credentials');
     }
 
     const token = generateAccessToken(user[field]);
@@ -123,9 +121,9 @@ async function login(emailOrUsername: string, password: string) {
       accessToken: token,
       refreshToken,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.log(error);
-    throw generateError('Internal Server Error', 500);
+    throw generateError('Internal Server Error', 500, error.message);
   }
 }
 
@@ -140,7 +138,7 @@ async function refreshToken(refreshToken: string) {
     jwtConfig.REFRESH_TOKEN_SECRET as jwt.Secret,
     (err: any, user: any) => {
       if (err) {
-        throw generateError('Refresh token is not valid', 403);
+        throw generateError('Refresh token is not valid', 403, err);
       }
 
       const accessToken = generateAccessToken(user);
@@ -160,7 +158,7 @@ async function forgotPassword(email: string) {
     const user = await getFromDB(email, User);
 
     if (!user) {
-      throw generateError('Invalid user credentials', 403);
+      throw generateError('Invalid user credentials', 403, 'Invalid user credentials');
     }
 
     const jwtResetSecret = `${jwtConfig.RESET_TOKEN_BASE}${user.password}`;
@@ -170,7 +168,7 @@ async function forgotPassword(email: string) {
     await sendResetPasswordEmail(user, link);
   } catch (error: any) {
     console.log(error);
-    throw generateError(error.message, 500);
+    throw generateError(error.message, 500, error);
   }
 }
 
@@ -185,14 +183,14 @@ async function resetPassword(id: string, token: string, newPassword: string) {
     const user = await getFromDB(id, User);
 
     if (!user) {
-      throw generateError('Invalid reset link', 403);
+      throw generateError('Invalid reset link', 403, 'Invalid reset link');
     }
 
     const jwtResetSecret = `${jwtConfig.RESET_TOKEN_BASE}${user.password}`;
 
     jwt.verify(token, jwtResetSecret, async (err: any, decoded: any) => {
       if (err) {
-        throw generateError('Invalid or expired reset link', 403);
+        throw generateError('Invalid or expired reset link', 403, err);
       }
 
       /**

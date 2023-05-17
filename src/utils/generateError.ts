@@ -11,10 +11,9 @@ class CustomError extends Error {
 
   constructor(message: string, statusCode: number, data: any) {
     super(message);
-    super(this.stack);
     this.statusCode = statusCode;
     this.data = data || {};
-    // Set the prototype explicitly to ensure correct inheritance
+    Error.captureStackTrace(this, this.constructor);
     Object.setPrototypeOf(this, CustomError.prototype);
   }
 }

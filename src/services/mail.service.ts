@@ -58,12 +58,10 @@ const generateWelcomeMessage = function (firstName: string) {
  * @param transporter
  * @param userData
  */
-export const sendWelcomeEmail = async function (
-  userData: any
-) {
+export const sendWelcomeEmail = async function (userData: any) {
   try {
     let info = await transporter.sendMail({
-      from: '"Fred Foo 👻" <foo@example.com>', // sender address
+      from: '"Your Friendly Neighborhood Spiderman" <foo@example.com>', // sender address
       to: userData.email,
       subject: 'Welcome!!!',
       html: generateWelcomeMessage(userData.firstname),
@@ -111,10 +109,7 @@ const generatePasswordResetMessage = function (
 `;
 };
 
-export const sendResetPasswordEmail = async function (
-  user: any,
-  link: string
-) {
+export const sendResetPasswordEmail = async function (user: any, link: string) {
   try {
     let info = await transporter.sendMail({
       from: '"Fred Foo 👻" <foo@example.com>', // sender address

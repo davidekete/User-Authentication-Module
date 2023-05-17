@@ -24,9 +24,9 @@ export function verifyToken(req: Request, res: Response, next: NextFunction) {
       console.log(err);
       return res.status(403).send('Could not verify token');
     }
-    if (user) {
-      req.user = <any>user;
-    }
+    //@ts-expect-error
+      req.user = user;
+    
     // req.user = user;
   });
   next();

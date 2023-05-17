@@ -9,9 +9,8 @@ import {
   resetUserPassword,
 } from '../controllers/user.controller';
 
-
 const router = express.Router();
-router.post('api/signup', createNewUser);
+router.post('/api/signup', createNewUser);
 
 router.post('api/auth/login', userLogin);
 
