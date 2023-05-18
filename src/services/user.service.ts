@@ -152,7 +152,7 @@ async function forgotPassword(email: string) {
     const jwtResetSecret = `${jwtConfig.RESET_TOKEN_BASE}${user.password}`;
     const resetToken = generateResetToken(email, jwtResetSecret);
 
-    const link = `/api/${serverConfig.BASE_URL}/${user.id}/${resetToken}`;
+    const link = `/reset/${serverConfig.BASE_URL}/${user.id}/${resetToken}`;
     await sendResetPasswordEmail(user, link);
   } catch (error: any) {
     console.log(error);
@@ -170,27 +170,21 @@ async function resetPassword(id: string, token: string, newPassword: string) {
 
     const jwtResetSecret = `${jwtConfig.RESET_TOKEN_BASE}${user.password}`;
 
-    jwt.verify(token, jwtResetSecret, async (err: any, decoded: any) => {
-      if (err) {
-        throw generateError('Invalid or expired reset link', 403, err);
-      }
-
-      /**
-       * Show password reset screen
-       */
-
+    const decoded = jwt.verify(token, jwtResetSecret);
+    if (decoded) {
       const hash = await bcrypt.hash(newPassword, 10);
 
       user.password = hash;
 
       return await user.save();
-    });
+    }
   } catch (error: any) {
-    console.log(error);
-    throw generateError(error.message, 500, error);
+    throw generateError(error.message, 403, {
+      message: 'Invalid or expired reset link',
+      error,
+    });
   }
 }
-
 
 async function changePassword(
   oldPassword: string,

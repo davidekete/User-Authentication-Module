@@ -34,7 +34,7 @@ router.post(
 
 router.post('/api/forgot-password', forgotPasswordLimiter, forgotPassword);
 
-router.post('/api/:id/:token', resetPasswordLimiter, resetUserPassword);
+router.post('/reset/:id/:token', resetPasswordLimiter, resetUserPassword);
 
 router.post('/api/auth/logout', verifyToken);
 

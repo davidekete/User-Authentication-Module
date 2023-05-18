@@ -136,9 +136,8 @@ async function resetUserPassword(req: Request, res: Response) {
   const { newPassword } = req.body;
 
   try {
-    await resetPassword(id, token, newPassword).then(() => {
-      return res.status(200).json({ message: 'Password reset successfully' });
-    });
+    await resetPassword(id, token, newPassword);
+    return res.status(200).json({ message: 'Password reset successfully' });
   } catch (error) {
     return res.status(500).json({ error });
   }
