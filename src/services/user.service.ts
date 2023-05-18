@@ -14,8 +14,10 @@ import {
   acquireFromDB,
 } from '../repository/user.repository';
 import * as jwt from 'jsonwebtoken';
-import { jwtConfig, serverConfig, passConfig } from '../config';
+import { jwtConfig, serverConfig } from '../config';
 import { generateError } from '../utils/generateError';
+
+const SALT_ROUNDS = 10;
 
 //create user
 async function createUser(
@@ -62,7 +64,7 @@ async function createUser(
   //hash password
 
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
     //create user
     const newUser = await addToDB(User, {
@@ -172,7 +174,7 @@ async function resetPassword(id: string, token: string, newPassword: string) {
 
     const decoded = jwt.verify(token, jwtResetSecret);
     if (decoded) {
-      const hash = await bcrypt.hash(newPassword, 10);
+      const hash = await bcrypt.hash(newPassword, SALT_ROUNDS);
 
       user.password = hash;
 
@@ -192,25 +194,41 @@ async function changePassword(
   userObj: any
 ) {
   try {
-    const user = await getFromDB(userObj, User);
+    const emailOrUsername = userObj.payload;
+
+    let user;
+    let query;
+
+    if (isEmail(emailOrUsername)) {
+      query = { email: emailOrUsername };
+    } else {
+      query = { username: emailOrUsername };
+    }
+
+    user = await acquireFromDB(User, query);
 
     if (!user) {
       throw generateError('Invalid user credentials', 403);
+    }
+
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+
+    if (!isPasswordValid) {
+      throw generateError(
+        'Invalid Credentials',
+        401,
+        'Invalid Credentials: Passwords do not match'
+      );
     }
 
     const passwordsMatch = await bcrypt.compare(oldPassword, newPassword);
 
     if (passwordsMatch) {
       throw generateError(
-        'Old password and new password cannot be the same',
-        403
+        'Same password',
+        403,
+        'Old password and new password cannot be the same'
       );
-    }
-
-    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
-
-    if (!isPasswordValid) {
-      throw generateError('Invalid Credentials', 401);
     }
 
     const passwordDifficulty = passwordStrength(newPassword);
@@ -219,17 +237,21 @@ async function changePassword(
       passwordDifficulty.value !== 'Strong' &&
       passwordDifficulty.value !== 'Medium'
     ) {
-      throw generateError('Password is not strong enough', 400);
+      throw generateError(
+        'Password difficulty',
+        400,
+        'Password is not strong enough'
+      );
     }
 
-    const hash = await bcrypt.hash(newPassword, passConfig.SALT_ROUNDS);
+    const hash = await bcrypt.hash(newPassword, SALT_ROUNDS);
 
     user.password = hash;
 
     return await user.save();
   } catch (error: any) {
     console.log(error);
-    throw generateError(error.message, 500);
+    throw generateError(error.message, 500, error);
   }
 }
 
