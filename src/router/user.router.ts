@@ -10,19 +10,31 @@ import {
 } from '../controllers/user.controller';
 import { acquireFromDB } from '../repository/user.repository';
 import { User } from '../database/models/user.model';
+import {
+  createAccountLimiter,
+  resetPasswordLimiter,
+  forgotPasswordLimiter,
+  loginAttemptLimiter,
+  refreshTokenLimiter,
+} from '../utils/rateLimit';
 
 const router = express.Router();
-router.post('/api/signup', createNewUser);
+router.post('/api/signup', createAccountLimiter, createNewUser);
 
-router.post('/api/auth/login', userLogin);
+router.post('/api/auth/login', loginAttemptLimiter, userLogin);
 
-router.post('/api/auth/refresh-token', getRefreshToken);
+router.post('/api/auth/refresh-token', refreshTokenLimiter, getRefreshToken);
 
-router.post('/api/change-password', verifyToken, changeUserPassword);
+router.post(
+  '/api/change-password',
+  resetPasswordLimiter,
+  verifyToken,
+  changeUserPassword
+);
 
-router.post('/api/forgot-password', forgotPassword);
+router.post('/api/forgot-password', forgotPasswordLimiter, forgotPassword);
 
-router.post('/api/:id/:token', resetUserPassword);
+router.post('/api/:id/:token', resetPasswordLimiter, resetUserPassword);
 
 router.post('/api/auth/logout', verifyToken);
 
