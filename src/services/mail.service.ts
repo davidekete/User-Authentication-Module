@@ -1,9 +1,7 @@
 import nodemailer from 'nodemailer';
 import { mailConfig } from '../config';
 
-/**
- * Creates a nodemailer transporter object
- */
+
 const transporter = nodemailer.createTransport({
   //@ts-expect-error
   host: mailConfig.HOST,
@@ -14,11 +12,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-/**
- * Generates and returns a HTML string for the welcome email
- * @param firstName
- * @returns HTML string
- */
+
 const generateWelcomeMessage = function (firstName: string) {
   return `
   <body style="font-family: Arial, sans-serif;">
@@ -53,11 +47,7 @@ const generateWelcomeMessage = function (firstName: string) {
   `;
 };
 
-/**
- * Sends a welcome email to the user
- * @param transporter
- * @param userData
- */
+
 const sendWelcomeEmail = async function (userData: any) {
   try {
     let info = await transporter.sendMail({
@@ -75,12 +65,7 @@ const sendWelcomeEmail = async function (userData: any) {
   }
 };
 
-/**
- * Generates and returns a HTML string for the password reset email
- * @param firstName
- * @param link
- * @returns HTML string
- */
+
 const generatePasswordResetMessage = function (
   firstName: string,
   link: string

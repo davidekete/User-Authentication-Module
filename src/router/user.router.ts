@@ -8,8 +8,6 @@ import {
   forgotPassword,
   resetUserPassword,
 } from '../controllers/user.controller';
-import { acquireFromDB } from '../repository/user.repository';
-import { User } from '../database/models/user.model';
 import {
   createAccountLimiter,
   resetPasswordLimiter,
@@ -32,18 +30,12 @@ router.post(
   changeUserPassword
 );
 
+router.put('/activate');
+
 router.post('/api/forgot-password', forgotPasswordLimiter, forgotPassword);
 
 router.post('/reset/:id/:token', resetPasswordLimiter, resetUserPassword);
 
 router.post('/api/auth/logout', verifyToken);
-
-router.get('/api/user', verifyToken, async (req, res) => {
-  const { email } = req.body;
-
-  const user = await acquireFromDB(User, { email });
-
-  return res.status(200).json({ message: 'User found', user });
-});
 
 export default router;

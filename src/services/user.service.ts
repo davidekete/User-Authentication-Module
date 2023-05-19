@@ -8,11 +8,7 @@ import {
   generateResetToken,
 } from '../utils/jwt';
 import { sendResetPasswordEmail, sendWelcomeEmail } from './mail.service';
-import {
-  getFromDB,
-  addToDB,
-  acquireFromDB,
-} from '../repository/user.repository';
+import { addToDB, getFromDB } from '../repository/user.repository';
 import * as jwt from 'jsonwebtoken';
 import { jwtConfig, serverConfig } from '../config';
 import { generateError } from '../utils/generateError';
@@ -29,8 +25,8 @@ async function createUser(
 ) {
   //check if username or email already exists
   try {
-    const userNameExists = await getFromDB(username, User);
-    const emailExists = await getFromDB(email, User);
+    const userNameExists = await getFromDB(User, { username });
+    const emailExists = await getFromDB(User, { email });
 
     if (userNameExists != null) {
       throw generateError(
@@ -75,7 +71,7 @@ async function createUser(
       password: hashedPassword,
     });
 
-    sendWelcomeEmail(newUser);
+    if (process.env.NODE_ENV === 'development') sendWelcomeEmail(newUser);
 
     return newUser;
   } catch (error: any) {
@@ -98,7 +94,7 @@ async function login(emailOrUsername: string, password: string) {
       query = { username: emailOrUsername };
     }
 
-    user = await acquireFromDB(User, query);
+    user = await getFromDB(User, query);
 
     if (!user) {
       throw generateError('Invalid Credentials', 401, 'Invalid Credentials');
@@ -141,7 +137,7 @@ async function refreshToken(refreshToken: string) {
 
 async function forgotPassword(email: string) {
   try {
-    const user = await acquireFromDB(User, { email });
+    const user = await getFromDB(User, { email });
 
     if (!user) {
       throw generateError(
@@ -164,7 +160,7 @@ async function forgotPassword(email: string) {
 
 async function resetPassword(id: string, token: string, newPassword: string) {
   try {
-    const user = await acquireFromDB(User, { id });
+    const user = await getFromDB(User, { id });
 
     if (!user) {
       throw generateError('Invalid reset link', 403, 'Invalid reset link');
@@ -205,7 +201,7 @@ async function changePassword(
       query = { username: emailOrUsername };
     }
 
-    user = await acquireFromDB(User, query);
+    user = await getFromDB(User, query);
 
     if (!user) {
       throw generateError('Invalid user credentials', 403);
