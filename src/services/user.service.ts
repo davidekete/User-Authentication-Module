@@ -15,7 +15,7 @@ import { generateError } from '../utils/generateError';
 
 const SALT_ROUNDS = 10;
 
-//create user
+
 async function createUser(
   username: string,
   firstname: string,
