@@ -36,7 +36,7 @@ export const User = sq.define('user', {
   },
 });
 
-(async () => {
-  await User.sync({force: true});
-  console.log('User Model synced');
-})();
+// (async () => {
+//   await User.sync({force: true});
+//   console.log('User Model synced');
+// })();
