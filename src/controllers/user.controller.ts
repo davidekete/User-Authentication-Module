@@ -10,36 +10,8 @@ import {
 import Joi from 'joi';
 
 async function createNewUser(req: Request, res: Response) {
-  const { username, firstname, lastname, email, password } = req.body;
-
-  const schema = Joi.object({
-    username: Joi.string().required(),
-    firstname: Joi.string().required(),
-    lastname: Joi.string().required(),
-    email: Joi.string().email().required(),
-    password: Joi.string().required(),
-  });
-
-  const { error } = schema.validate({
-    username,
-    firstname,
-    lastname,
-    email,
-    password,
-  });
-
-  if (error) {
-    return res.status(400).json({ error: error.details[0].message });
-  }
-
   try {
-    const newUser = await createUser(
-      username,
-      firstname,
-      lastname,
-      email,
-      password
-    );
+    const newUser = await createUser(req.body);
 
     return res.status(201).json({ newUser });
   } catch (error: any) {
@@ -48,27 +20,8 @@ async function createNewUser(req: Request, res: Response) {
 }
 
 async function userLogin(req: Request, res: Response) {
-  const { emailOrUsername, password } = req.body;
-
-  const schema = Joi.object({
-    emailOrUsername: Joi.string().required(),
-    password: Joi.string().required(),
-  });
-
-  const { error } = schema.validate({
-    emailOrUsername,
-    password,
-  });
-
-  if (error) {
-    return res.status(400).json({ error: error.details[0].message });
-  }
-
   try {
-    const { accessToken, refreshToken, message } = await login(
-      emailOrUsername,
-      password
-    );
+    const { accessToken, refreshToken, message } = await login(req.body);
 
     return res.status(200).json({ accessToken, refreshToken, message });
   } catch (error: any) {

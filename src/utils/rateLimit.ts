@@ -30,7 +30,7 @@ const resetPasswordLimiter = rateLimit({
 
 const refreshTokenLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour window
-  max: 2, // start blocking after 5 requests
+  max: 2, // start blocking after 2 requests
   message:
     'Too many refresh token requests from this IP, please try again after an hour',
 });

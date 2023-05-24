@@ -12,17 +12,14 @@ import { addToDB, getFromDB } from '../repository/user.repository';
 import * as jwt from 'jsonwebtoken';
 import { jwtConfig, serverConfig } from '../config';
 import { generateError } from '../utils/generateError';
+import { UserData } from '../types/userdata';
+import { loginData } from '../types/loginData';
 
 const SALT_ROUNDS = 10;
 
+async function createUser(requestBody: UserData) {
+  const { username, firstname, lastname, email, password } = requestBody;
 
-async function createUser(
-  username: string,
-  firstname: string,
-  lastname: string,
-  email: string,
-  password: string
-) {
   //check if username or email already exists
   try {
     const userNameExists = await getFromDB(User, { username });
@@ -80,7 +77,9 @@ async function createUser(
   }
 }
 
-async function login(emailOrUsername: string, password: string) {
+async function login(requestBody: loginData) {
+  const { emailOrUsername, password } = requestBody;
+
   try {
     let user;
     let field;
@@ -97,13 +96,13 @@ async function login(emailOrUsername: string, password: string) {
     user = await getFromDB(User, query);
 
     if (!user) {
-      throw generateError('Invalid Credentials', 401, 'Invalid Credentials');
+      throw generateError('User not found', 401, 'Invalid Credentials');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      throw generateError('Invalid Credentials', 401, 'Invalid Credentials');
+      throw generateError('Incorrect Password', 401, 'Invalid Credentials');
     }
 
     const token = generateAccessToken(user[field]);
@@ -115,7 +114,8 @@ async function login(emailOrUsername: string, password: string) {
       refreshToken,
     };
   } catch (error: any) {
-    console.log(error);
+    console.log('catch log', error);
+    // throw generateError('Internal Server Error', error.statusCode, error.message);
     throw generateError('Internal Server Error', 500, error.message);
   }
 }

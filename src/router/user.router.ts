@@ -15,9 +15,15 @@ import {
   loginAttemptLimiter,
   refreshTokenLimiter,
 } from '../utils/rateLimit';
+import createUserValidator from '../middleware/createUserValidator';
 
 const router = express.Router();
-router.post('/api/signup', createAccountLimiter, createNewUser);
+router.post(
+  '/api/signup',
+  createUserValidator,
+  createAccountLimiter,
+  createNewUser
+);
 
 router.post('/api/auth/login', loginAttemptLimiter, userLogin);
 

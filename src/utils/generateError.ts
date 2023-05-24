@@ -1,27 +1,24 @@
-/**
- * @description Generate custom error
- * @param {string} message
- * @param {number} statusCode
- * @param {any} data
- */
+import { NextFunction, Request, Response } from 'express';
+import { errorCodesObject } from './errorCodes';
+export class CustomError extends Error {
+  errData: any;
 
-class CustomError extends Error {
-  statusCode: number;
-  data: any;
-
-  constructor(message: string, statusCode: number, data: any) {
-    super(message);
-    this.statusCode = statusCode;
-    this.data = data || {};
-    Error.captureStackTrace(this, this.constructor);
-    Object.setPrototypeOf(this, CustomError.prototype);
+  constructor(errData: any) {
+    super();
+    this.errData = errData;
   }
 }
 
 export const generateError = function (
-  message: string,
-  statusCode: number,
-  data?: any
-): Error {
-  return new CustomError(message, statusCode, data);
+  errorObj: any,
+  res: Response,
+  req: Request,
+  next: NextFunction
+) {
+  const code: keyof typeof errorCodesObject = errorObj.code
+    ? errorObj.code
+    : null;
+  const error = errorCodesObject[code] || errorCodesObject['INTERNAL_ERROR'];
+
+  return res.status(error.statusCode).json({ message: error.message });
 };

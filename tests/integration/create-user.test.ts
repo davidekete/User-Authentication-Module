@@ -1,6 +1,6 @@
 import request from 'supertest';
-import app from '../src/index';
-import { User } from '../src/database/models/user.model';
+import app from '../../src/index';
+import { User } from '../../src/database/models/user.model';
 
 describe('Create New User', () => {
   const user = {
