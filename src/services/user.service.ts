@@ -11,7 +11,7 @@ import { sendResetPasswordEmail, sendWelcomeEmail } from './mail.service';
 import { addToDB, getFromDB } from '../repository/user.repository';
 import * as jwt from 'jsonwebtoken';
 import { jwtConfig, serverConfig } from '../config';
-import { generateError } from '../utils/generateError';
+import { CustomError } from '../utils/generateError';
 import { UserData } from '../types/userdata';
 import { loginData } from '../types/loginData';
 
@@ -21,23 +21,11 @@ async function createUser(requestBody: UserData) {
   const { username, firstname, lastname, email, password } = requestBody;
 
   //check if username or email already exists
-  try {
-    const userNameExists = await getFromDB(User, { username });
-    const emailExists = await getFromDB(User, { email });
+  const userNameExists = await getFromDB(User, { username });
+  const emailExists = await getFromDB(User, { email });
 
-    if (userNameExists != null) {
-      throw generateError(
-        'Duplicate username entry',
-        400,
-        'Username already exists'
-      );
-    }
-
-    if (emailExists != null) {
-      throw generateError('Duplicate email entry', 400, 'Email already exists');
-    }
-  } catch (error) {
-    console.log(error);
+  if (userNameExists != null || emailExists != null) {
+    throw new CustomError('DUPLICATE_IDENTIFIER');
   }
 
   //check password strength
@@ -47,11 +35,7 @@ async function createUser(requestBody: UserData) {
     passwordDifficulty.value !== 'Strong' &&
     passwordDifficulty.value !== 'Medium'
   ) {
-    throw generateError(
-      'Password difficulty',
-      400,
-      'Password is not strong enough'
-    );
+    throw new CustomError('WEAK_PASSWORD');
   }
 
   //hash password
@@ -73,7 +57,7 @@ async function createUser(requestBody: UserData) {
     return newUser;
   } catch (error: any) {
     console.log(error);
-    throw generateError(error.message, 500, error.errors[0].message);
+    throw new CustomError(error);
   }
 }
 
@@ -96,13 +80,13 @@ async function login(requestBody: loginData) {
     user = await getFromDB(User, query);
 
     if (!user) {
-      throw generateError('User not found', 401, 'Invalid Credentials');
+      throw new CustomError('USER_NOT_FOUND');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      throw generateError('Incorrect Password', 401, 'Invalid Credentials');
+      throw new CustomError('INVALID_EMAIL_OR_PASSWORD');
     }
 
     const token = generateAccessToken(user[field]);
@@ -114,9 +98,8 @@ async function login(requestBody: loginData) {
       refreshToken,
     };
   } catch (error: any) {
-    console.log('catch log', error);
-    // throw generateError('Internal Server Error', error.statusCode, error.message);
-    throw generateError('Internal Server Error', 500, error.message);
+    console.log(error);
+    throw new CustomError(error);
   }
 }
 
@@ -131,7 +114,7 @@ async function refreshToken(refreshToken: string) {
     return accessToken;
   } catch (error: any) {
     console.log(error);
-    throw generateError('Internal Server Error', 500, error.message);
+    throw new CustomError(error);
   }
 }
 
@@ -140,11 +123,7 @@ async function forgotPassword(email: string) {
     const user = await getFromDB(User, { email });
 
     if (!user) {
-      throw generateError(
-        'Invalid user credentials',
-        403,
-        'Invalid user credentials'
-      );
+      throw new CustomError('USER_NOT_FOUND');
     }
 
     const jwtResetSecret = `${jwtConfig.RESET_TOKEN_BASE}${user.password}`;
@@ -154,7 +133,7 @@ async function forgotPassword(email: string) {
     await sendResetPasswordEmail(user, link);
   } catch (error: any) {
     console.log(error);
-    throw generateError(error.message, 500, error);
+    throw new CustomError(error);
   }
 }
 
@@ -163,7 +142,8 @@ async function resetPassword(id: string, token: string, newPassword: string) {
     const user = await getFromDB(User, { id });
 
     if (!user) {
-      throw generateError('Invalid reset link', 403, 'Invalid reset link');
+      // throw generateError('Invalid reset link', 403, 'Invalid reset link');
+      throw new CustomError('INVALID_PASSWORD_RESET_LINK');
     }
 
     const jwtResetSecret = `${jwtConfig.RESET_TOKEN_BASE}${user.password}`;
@@ -177,10 +157,7 @@ async function resetPassword(id: string, token: string, newPassword: string) {
       return await user.save();
     }
   } catch (error: any) {
-    throw generateError(error.message, 403, {
-      message: 'Invalid or expired reset link',
-      error,
-    });
+    throw new CustomError(error);
   }
 }
 
@@ -204,25 +181,33 @@ async function changePassword(
     user = await getFromDB(User, query);
 
     if (!user) {
-      throw generateError('Invalid user credentials', 403);
+      // throw generateError('Invalid user credentials', 403);
+      throw new CustomError('USER_NOT_FOUND', 403);
     }
 
     const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
 
     if (!isPasswordValid) {
-      throw generateError(
-        'Invalid Credentials',
-        401,
-        'Invalid Credentials: Passwords do not match'
-      );
+      // throw generateError(
+      //   'Invalid Credentials',
+      //   401,
+      //   'Invalid Credentials: Passwords do not match'
+      // );
+
+      throw new CustomError('INVALID_EMAIL_OR_PASSWORD', 401);
     }
 
     const passwordsMatch = await bcrypt.compare(oldPassword, newPassword);
 
     if (passwordsMatch) {
-      throw generateError(
-        'Same password',
-        403,
+      // throw generateError(
+      //   'Same password',
+      //   403,
+      //   'Old password and new password cannot be the same'
+      // );
+      throw new CustomError(
+        'INVALID_PASSWORD',
+        undefined,
         'Old password and new password cannot be the same'
       );
     }
@@ -233,11 +218,12 @@ async function changePassword(
       passwordDifficulty.value !== 'Strong' &&
       passwordDifficulty.value !== 'Medium'
     ) {
-      throw generateError(
-        'Password difficulty',
-        400,
-        'Password is not strong enough'
-      );
+      // throw generateError(
+      //   'Password difficulty',
+      //   400,
+      //   'Password is not strong enough'
+      // );
+      throw new CustomError('WEAK_PASSWORD');
     }
 
     const hash = await bcrypt.hash(newPassword, SALT_ROUNDS);
@@ -247,7 +233,7 @@ async function changePassword(
     return await user.save();
   } catch (error: any) {
     console.log(error);
-    throw generateError(error.message, 500, error);
+    throw new CustomError(error);
   }
 }
 

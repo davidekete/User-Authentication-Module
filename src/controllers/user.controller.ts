@@ -7,7 +7,7 @@ import {
   refreshToken as refreshTokenService,
   resetPassword,
 } from '../services/user.service';
-import Joi from 'joi';
+import { CustomError } from '../utils/generateError';
 
 async function createNewUser(req: Request, res: Response) {
   try {
@@ -15,7 +15,7 @@ async function createNewUser(req: Request, res: Response) {
 
     return res.status(201).json({ newUser });
   } catch (error: any) {
-    return res.status(500).json({ error });
+    throw new CustomError(error);
   }
 }
 
@@ -25,7 +25,7 @@ async function userLogin(req: Request, res: Response) {
 
     return res.status(200).json({ accessToken, refreshToken, message });
   } catch (error: any) {
-    return res.status(500).json({ error });
+    throw new CustomError(error);
   }
 }
 
@@ -33,7 +33,7 @@ async function getRefreshToken(req: Request, res: Response) {
   const { refreshToken } = req.body;
 
   if (!refreshToken) {
-    return res.status(400).json({ error: 'Refresh Token is required' });
+    throw new CustomError('INVALID_TOKEN', 400, 'Refresh Token is required');
   }
 
   try {
@@ -41,84 +41,37 @@ async function getRefreshToken(req: Request, res: Response) {
 
     return res.status(200).json({ accessToken });
   } catch (error: any) {
-    return res.status(500).json({ error });
+    throw new CustomError(error);
   }
 }
 
 async function forgotPassword(req: Request, res: Response) {
-  const { email } = req.body;
-
-  const schema = Joi.object({
-    email: Joi.string().email().required(),
-  });
-
-  const { error } = schema.validate({
-    email,
-  });
-
-  if (error) {
-    return res.status(400).json({ error: error.details[0].message });
-  }
-
   try {
-    await forgotPasswordService(email);
+    await forgotPasswordService(req.body.email);
     return res
       .status(200)
       .json({ message: `We've sent a password reset link to your email` });
-  } catch (error) {
-    return res.status(500).json({ error });
+  } catch (error: any) {
+    throw new CustomError(error);
   }
 }
 
 async function resetUserPassword(req: Request, res: Response) {
-  const { id, token } = req.params;
-
-  const schema = Joi.object({
-    id: Joi.string().required(),
-    token: Joi.string().required(),
-  });
-
-  const { error } = schema.validate({
-    id,
-    token,
-  });
-
-  if (error) {
-    return res.status(400).json({ error: error.details[0].message });
-  }
-  const { newPassword } = req.body;
-
   try {
-    await resetPassword(id, token, newPassword);
+    await resetPassword(req.params.id, req.params.token, req.body.newPassword);
     return res.status(200).json({ message: 'Password reset successfully' });
-  } catch (error) {
-    return res.status(500).json({ error });
+  } catch (error: any) {
+    throw new CustomError(error);
   }
 }
 
 async function changeUserPassword(req: Request, res: Response) {
-  const { oldPassword, newPassword } = req.body;
-
-  const schema = Joi.object({
-    oldPassword: Joi.string().required(),
-    newPassword: Joi.string().required(),
-  });
-
-  const { error } = schema.validate({
-    oldPassword,
-    newPassword,
-  });
-
-  if (error) {
-    return res.status(400).json({ error: error.details[0].message });
-  }
-
   try {
     //@ts-expect-error
-    await changePassword(oldPassword, newPassword, req.user);
+    await changePassword(req.body.oldPassword, req.body.newPassword, req.user);
     return res.status(200).json({ message: 'Password changed successfully' });
   } catch (error: any) {
-    return res.status(500).json({ error });
+    throw new CustomError(error);
   }
 }
 

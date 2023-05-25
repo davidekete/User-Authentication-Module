@@ -16,31 +16,53 @@ import {
   refreshTokenLimiter,
 } from '../utils/rateLimit';
 import createUserValidator from '../middleware/createUserValidator';
+import loginDataValidator from '../middleware/loginDataValidator';
+import {
+  forgotPasswordValidator,
+  resetPasswordValidator,
+  changeUserPasswordValidator,
+} from '../middleware/resetPassword';
 
 const router = express.Router();
 router.post(
   '/api/signup',
-  createUserValidator,
   createAccountLimiter,
+  createUserValidator,
   createNewUser
 );
 
-router.post('/api/auth/login', loginAttemptLimiter, userLogin);
+router.post(
+  '/api/auth/login',
+  loginAttemptLimiter,
+  loginDataValidator,
+  userLogin
+);
 
 router.post('/api/auth/refresh-token', refreshTokenLimiter, getRefreshToken);
 
 router.post(
   '/api/change-password',
   resetPasswordLimiter,
+  changeUserPasswordValidator,
   verifyToken,
   changeUserPassword
 );
 
 router.put('/activate');
 
-router.post('/api/forgot-password', forgotPasswordLimiter, forgotPassword);
+router.post(
+  '/api/forgot-password',
+  forgotPasswordLimiter,
+  forgotPasswordValidator,
+  forgotPassword
+);
 
-router.post('/reset/:id/:token', resetPasswordLimiter, resetUserPassword);
+router.post(
+  '/reset/:id/:token',
+  resetPasswordLimiter,
+  resetPasswordValidator,
+  resetUserPassword
+);
 
 router.post('/api/auth/logout', verifyToken);
 

@@ -1,15 +1,23 @@
 import { NextFunction, Request, Response } from 'express';
 import { errorCodesObject } from './errorCodes';
 export class CustomError extends Error {
-  errData: any;
+  errData;
+  customStatusCode;
+  customErrorMessage;
 
-  constructor(errData: any) {
+  constructor(
+    errData: keyof typeof errorCodesObject,
+    customStatusCode?: number,
+    customErrorMessage?: string
+  ) {
     super();
     this.errData = errData;
+    this.customStatusCode = customStatusCode;
+    this.customErrorMessage = customErrorMessage;
   }
 }
 
-export const generateError = function (
+export const handleError = function (
   errorObj: any,
   res: Response,
   req: Request,
@@ -19,6 +27,13 @@ export const generateError = function (
     ? errorObj.code
     : null;
   const error = errorCodesObject[code] || errorCodesObject['INTERNAL_ERROR'];
+  const statusCode = errorObj.customStatusCode
+    ? errorObj.customStatusCode
+    : error.statusCode;
 
-  return res.status(error.statusCode).json({ message: error.message });
+  const message = errorObj.customErrorMessage
+    ? errorObj.customErrorMessage
+    : error.message;
+
+  return res.status(statusCode).json({ message });
 };

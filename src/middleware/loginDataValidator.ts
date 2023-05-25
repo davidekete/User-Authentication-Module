@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import Joi from 'joi';
+import { CustomError } from '../utils/generateError';
 
 const loginDataValidator = function (
   req: Request,
@@ -16,9 +17,15 @@ const loginDataValidator = function (
     password: req.body.password,
   });
 
-  if (error) {
-    return res.status(400).json({ error: error.details[0].message });
+ if (error) {
+    throw new CustomError(
+      'VALIDATION_ERROR',
+      undefined,
+      error.details[0].message
+    );
   }
 
   next();
 };
+
+export default loginDataValidator;
