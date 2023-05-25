@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import Joi from 'joi';
+import { CustomError } from '../utils/generateError';
 
 const createUserValidator = function (
   req: Request,
@@ -23,7 +24,11 @@ const createUserValidator = function (
   });
 
   if (error) {
-    return res.status(400).json({ error: error.details[0].message });
+    throw new CustomError(
+      'VALIDATION_ERROR',
+      undefined,
+      error.details[0].message
+    );
   }
 
   next();
