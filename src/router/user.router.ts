@@ -48,8 +48,6 @@ router.post(
   changeUserPassword
 );
 
-router.put('/activate');
-
 router.post(
   '/api/forgot-password',
   forgotPasswordLimiter,
