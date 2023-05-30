@@ -21,5 +21,3 @@ const addToDB = async function (
 };
 
 export { getFromDB, addToDB };
-
-//ModelStatic<Model<any, any>>

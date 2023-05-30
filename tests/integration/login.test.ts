@@ -1,7 +1,5 @@
 import request from 'supertest';
 import app from '../../src/index';
-import { User } from '../../src/database/models/user.model';
-import bcrypt from 'bcrypt';
 
 describe('Login User', () => {
   test('It should authenticate a user with valid credentials', async () => {

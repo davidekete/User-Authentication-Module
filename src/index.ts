@@ -3,8 +3,6 @@ import bodyParser from 'body-parser';
 import morgan from 'morgan';
 import cors from 'cors';
 import router from './router/user.router';
-import { handleError } from './utils/generateError';
-
 
 const app = express();
 
@@ -17,8 +15,16 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(morgan('combined'));
 
 app.use(router);
-//@ts-expect-error
-app.use(handleError)//FIX LATER
 
+//Implement general error handling solution
+app.use((err: any, req: any, res: any, next: any) => {
+  if (err) {
+    res.status(err.status || 500).json({
+      error: {
+        message: err.message || 'Internal Server Error',
+      },
+    });
+  }
+});
 
 export default app;
