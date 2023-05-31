@@ -75,8 +75,6 @@ async function changeUserPassword(req: Request, res: Response) {
   }
 }
 
-async function logout(req: Request, res: Response) {}
-
 export {
   createNewUser,
   userLogin,

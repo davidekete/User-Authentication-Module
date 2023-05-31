@@ -7,10 +7,6 @@ const serverConfig = {
   ENVIRONMENT: process.env.NODE_ENV || 'development',
 };
 
-const passConfig = {
-  SALT_ROUNDS: process.env.SALT_ROUNDS || 10,
-};
-
 const dbConfig = {
   DATABASE_URI: process.env.DATABASE_URI,
 };
@@ -31,4 +27,4 @@ const mailConfig = {
   PASSWORD: process.env.MAIL_PASSWORD,
 };
 
-export { serverConfig, passConfig, dbConfig, jwtConfig, mailConfig };
+export { serverConfig, dbConfig, jwtConfig, mailConfig };
