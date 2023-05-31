@@ -11,7 +11,7 @@ export const errorCodesObject = {
 
   VALIDATION_ERROR: {
     statusCode: 400,
-    message: "Invalid data object"
+    message: 'Invalid data object',
   },
 
   USER_NOT_FOUND: {
@@ -29,9 +29,14 @@ export const errorCodesObject = {
     message: 'The provided token is invalid',
   },
 
+  NO_TOKEN: {
+    statusCode: 401,
+    message: 'Token is required',
+  },
+
   INVALID_PASSWORD: {
     statusCode: 403,
-    message: "Password could not be verified"
+    message: 'Password could not be verified',
   },
 
   INVALID_PASSWORD_RESET_LINK: {
@@ -43,6 +48,4 @@ export const errorCodesObject = {
     statusCode: 500,
     message: 'Internal Server Error',
   },
-
-
 };
